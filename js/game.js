@@ -33,7 +33,9 @@ monsterImage.src = "images/monster.png";
 var hero = {
 	speed: 256 // movement in pixels per second
 };
-var monster = {};
+var monster = {
+	speed: 50
+};
 var monstersCaught = 0;
 
 // Handle keyboard controls
@@ -47,29 +49,42 @@ addEventListener("keyup", function (e) {
 	delete keysDown[e.keyCode];
 }, false);
 
-// Reset the game when the player catches a monster
-var reset = function () {
+// Init the game
+var init = function () {
 	hero.x = canvas.width / 2;
 	hero.y = canvas.height / 2;
 
+	createNewMonster();
+};
+
+function createNewMonster(){
 	// Throw the monster somewhere on the screen randomly
 	monster.x = 32 + (Math.random() * (canvas.width - 64));
 	monster.y = 32 + (Math.random() * (canvas.height - 64));
-};
+	monster.direction = newDirection();
+}
 
 // Update game objects
 var update = function (modifier) {
+	var dx = 0;
+	var dy = 0;
 	if (38 in keysDown) { // Player holding up
-		hero.y -= hero.speed * modifier;
+		dy = -hero.speed * modifier;
 	}
 	if (40 in keysDown) { // Player holding down
-		hero.y += hero.speed * modifier;
+		dy = hero.speed * modifier;
 	}
 	if (37 in keysDown) { // Player holding left
-		hero.x -= hero.speed * modifier;
+		dx = -hero.speed * modifier;
 	}
 	if (39 in keysDown) { // Player holding right
-		hero.x += hero.speed * modifier;
+		dx = hero.speed * modifier;
+	}
+	if(!outOfBounds(hero.x+dx,hero.y,32,32)){
+		hero.x += dx;
+	}
+	if(!outOfBounds(hero.x,hero.y+dy,32,32)){
+		hero.y += dy;
 	}
 
 	// Are they touching?
@@ -80,9 +95,47 @@ var update = function (modifier) {
 		&& monster.y <= (hero.y + 32)
 	) {
 		++monstersCaught;
-		reset();
+		createNewMonster();
+	}
+
+	var movement = moveEntity(monster,modifier);
+	if(outOfBounds(monster.x+movement.dx,monster.y+movement.dy,32,32)){
+		monster.direction = newDirection();
+	}else{
+		monster.x += movement.dx;
+		monster.y += movement.dy;
 	}
 };
+
+function moveEntity(entity,modifier){
+	var dx = 0;
+	var dy = 0;
+	if(entity.direction == 0){
+		dy = -monster.speed * modifier;
+	}
+	if(entity.direction == 1){
+		dx = monster.speed * modifier;
+	}
+	if(entity.direction == 2){
+		dy = monster.speed * modifier;
+	}
+	if(entity.direction == 3){
+		dx = -monster.speed * modifier;
+	}
+	return {dx,dy};
+}
+
+function outOfBounds(x, y, width, height){
+	if(x<0||y<0||x+width>canvas.width||y+height>canvas.height){
+		return true;
+	}else{
+		return false;
+	}
+}
+
+function newDirection(){
+	return Math.floor(Math.random() * 4);
+}
 
 // Draw everything
 var render = function () {
@@ -126,5 +179,5 @@ requestAnimationFrame = w.requestAnimationFrame || w.webkitRequestAnimationFrame
 
 // Let's play this game!
 var then = Date.now();
-reset();
+init();
 main();
