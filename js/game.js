@@ -30,13 +30,59 @@ monsterImage.onload = function () {
 monsterImage.src = "images/monster.png";
 
 // Game objects
-var hero = {
-	speed: 256 // movement in pixels per second
+function Hero (){
+	this.x = canvas.width / 2;
+	this.y = canvas.height / 2;
+	this.speed = 256;
 };
-var monster = {
-	speed: 50
+
+function Monster(){
+	this.speed = 50;
+	this.width = 32;
+	this.x = mapBorderWidth + (Math.random() * (canvas.width - 2*mapBorderWidth-this.width));
+	this.y = mapBorderWidth + (Math.random() * (canvas.height - 2*mapBorderWidth-this.width));
+	this.newDirection();
+}
+Monster.prototype.newDirection = function() {
+		this.direction = Math.floor(Math.random() * 4);
+		this.nextDirectionChange = Date.now() + (1+(Math.random() * 3))*1000;
 };
+Monster.prototype.move = function (delta) {
+		var dx = 0;
+		var dy = 0;
+		if(this.direction == 0){
+			dy = -this.speed * delta;
+		}
+		if(this.direction == 1){
+			dx = this.speed * delta;
+		}
+		if(this.direction == 2){
+			dy = this.speed * delta;
+		}
+		if(this.direction == 3){
+			dx = -this.speed * delta;
+		}
+		return {dx,dy};
+};
+Monster.prototype.act = function(delta) {
+		if(Date.now()>this.nextDirectionChange){
+			this.newDirection();
+		}
+		var movement = this.move(delta);
+		if(outOfBounds(this.x+movement.dx,this.y+movement.dy,32,32)){
+			this.newDirection();
+		}else{
+			this.x += movement.dx;
+			this.y += movement.dy;
+		}
+};
+
+var hero = new Hero();
+var monsters = [];
+var nextMonsterSpawn;
 var monstersCaught = 0;
+var fps = 0;
+var mapBorderWidth = 32;
 
 // Handle keyboard controls
 var keysDown = {};
@@ -49,36 +95,40 @@ addEventListener("keyup", function (e) {
 	delete keysDown[e.keyCode];
 }, false);
 
-// Init the game
-var init = function () {
-	hero.x = canvas.width / 2;
-	hero.y = canvas.height / 2;
+function spawnMonster(){
+	monsters.push(new Monster());
+	var delay = (0.1+Math.random()*2);
+	console.log("Next monster spawn in "+delay+" seconds.");
+	nextMonsterSpawn = Date.now() + delay*1000;
+}
 
-	createNewMonster();
-};
-
-function createNewMonster(){
-	// Throw the monster somewhere on the screen randomly
-	monster.x = 32 + (Math.random() * (canvas.width - 64));
-	monster.y = 32 + (Math.random() * (canvas.height - 64));
-	monster.direction = newDirection();
+function outOfBounds(x, y, width, height){
+	if(x<mapBorderWidth||y<mapBorderWidth||x+width>canvas.width-mapBorderWidth||y+height>canvas.height-mapBorderWidth){
+		return true;
+	}else{
+		return false;
+	}
 }
 
 // Update game objects
-var update = function (modifier) {
+var update = function (delta) {
+
+	if(Date.now()>nextMonsterSpawn){
+		spawnMonster();
+	}
 	var dx = 0;
 	var dy = 0;
-	if (38 in keysDown) { // Player holding up
-		dy = -hero.speed * modifier;
+	if (38 in keysDown) { // Up
+		dy = -hero.speed * delta;
 	}
-	if (40 in keysDown) { // Player holding down
-		dy = hero.speed * modifier;
+	if (40 in keysDown) { // Down
+		dy = hero.speed * delta;
 	}
-	if (37 in keysDown) { // Player holding left
-		dx = -hero.speed * modifier;
+	if (37 in keysDown) { // Left
+		dx = -hero.speed * delta;
 	}
-	if (39 in keysDown) { // Player holding right
-		dx = hero.speed * modifier;
+	if (39 in keysDown) { // Right
+		dx = hero.speed * delta;
 	}
 	if(!outOfBounds(hero.x+dx,hero.y,32,32)){
 		hero.x += dx;
@@ -86,56 +136,19 @@ var update = function (modifier) {
 	if(!outOfBounds(hero.x,hero.y+dy,32,32)){
 		hero.y += dy;
 	}
-
-	// Are they touching?
-	if (
-		hero.x <= (monster.x + 32)
-		&& monster.x <= (hero.x + 32)
-		&& hero.y <= (monster.y + 32)
-		&& monster.y <= (hero.y + 32)
-	) {
-		++monstersCaught;
-		createNewMonster();
-	}
-
-	var movement = moveEntity(monster,modifier);
-	if(outOfBounds(monster.x+movement.dx,monster.y+movement.dy,32,32)){
-		monster.direction = newDirection();
-	}else{
-		monster.x += movement.dx;
-		monster.y += movement.dy;
+	for(var i = 0; i < monsters.length;i++){
+		var monster = monsters[i];
+		if (hero.x <= (monster.x + 32)
+			&& monster.x <= (hero.x + 32)
+			&& hero.y <= (monster.y + 32)
+			&& monster.y <= (hero.y + 32)) {
+				++monstersCaught;
+				monsters.splice(i,1);
+				continue;
+		}
+		monster.act(delta);
 	}
 };
-
-function moveEntity(entity,modifier){
-	var dx = 0;
-	var dy = 0;
-	if(entity.direction == 0){
-		dy = -monster.speed * modifier;
-	}
-	if(entity.direction == 1){
-		dx = monster.speed * modifier;
-	}
-	if(entity.direction == 2){
-		dy = monster.speed * modifier;
-	}
-	if(entity.direction == 3){
-		dx = -monster.speed * modifier;
-	}
-	return {dx,dy};
-}
-
-function outOfBounds(x, y, width, height){
-	if(x<0||y<0||x+width>canvas.width||y+height>canvas.height){
-		return true;
-	}else{
-		return false;
-	}
-}
-
-function newDirection(){
-	return Math.floor(Math.random() * 4);
-}
 
 // Draw everything
 var render = function () {
@@ -148,7 +161,10 @@ var render = function () {
 	}
 
 	if (monsterReady) {
-		ctx.drawImage(monsterImage, monster.x, monster.y);
+		for(i = 0;i<monsters.length;i++){
+			var monster = monsters[i];
+			ctx.drawImage(monsterImage, monster.x, monster.y);
+		}
 	}
 
 	// Score
@@ -157,12 +173,20 @@ var render = function () {
 	ctx.textAlign = "left";
 	ctx.textBaseline = "top";
 	ctx.fillText("Goblins caught: " + monstersCaught, 32, 32);
+
+	ctx.fillText("FPS: " + fps, 32, 64);
 };
 
 // The main game loop
 var main = function () {
 	var now = Date.now();
 	var delta = now - then;
+	fpsCounter++;
+	if(fpsCounter>=60){
+		fps = Math.round(fpsCounter/((Date.now()-fpsPolled)/1000));
+		fpsPolled = Date.now();
+		fpsCounter = 0;
+	}
 
 	update(delta / 1000);
 	render();
@@ -179,5 +203,7 @@ requestAnimationFrame = w.requestAnimationFrame || w.webkitRequestAnimationFrame
 
 // Let's play this game!
 var then = Date.now();
-init();
+var fpsPolled = Date.now();
+var fpsCounter = 0;
+spawnMonster();
 main();
