@@ -4,13 +4,22 @@
 	<head>
 		<meta charset="utf-8">
 		<link rel="stylesheet" type="text/css" href="css/style.css">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
 		<title>Stuff</title>
 	</head>
+	<script>
+	$(function(){
+		$('.nav a').click(function(){
+			$(this).parent().addClass('active').siblings().removeClass('active')	
+		})
+	})
+	</script>
 	<body>
-		<p>Hello World</p>
-		<ul>
-			<li><a href=http://juniperbrew.github.io/WebGLSandbox>WebGL Tutorial</a></li>
-			<li><a href=http://juniperbrew.github.io/TmxMapLoader_JS/>TmxMapLoader_JS</a></li>
+		<ul class="nav">
+			<li class="active"><a href="game.html" target="iframe1">Game</a></li>
+			<li><a href="http://juniperbrew.github.io/WebGLSandbox" target="iframe1">WebGL Tutorial</a></li>
+			<li><a href="http://juniperbrew.github.io/TmxMapLoader_JS" target="iframe1"/>TmxMapLoader_JS</a></li>
 		</ul>
+		<iframe name="iframe1" src="game.html" frameborder="0" style="width:100%; height:calc(100vh - 30px);;"></iframe>
 	</body>
 </html>

@@ -3,11 +3,13 @@ ul {
     margin: 0;
     padding: 0;
     overflow: hidden;
-    background-color: #111;
+    background-color: #555;
 }
 
 li {
     float: left;
+    transition:.5s;
+    //border: 1px solid #111;
 }
 
 li a {
@@ -16,10 +18,14 @@ li a {
     text-align: center;
     padding: 8px;
     text-decoration: none;
-    border: 1px solid #555;
+    
 }
 
-/* Change the link color to #111 (black) on hover */
-li a:hover {
+li:not(.active):hover {
+    background-color: #111;
+}
+
+.active {
     background-color: #4CAF50;
+    color: white;
 }
