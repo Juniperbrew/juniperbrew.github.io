@@ -2,27 +2,23 @@ ul {
     list-style-type: none;
     margin: 0;
     padding: 0;
-    width: 25%;
-    background-color: #f1f1f1;
-    height: 100%; /* Full height */
-    position: fixed; /* Make it stick, even on scroll */
-    overflow: auto; /* Enable scrolling if the sidenav has too much content */
+    overflow: hidden;
+    background-color: #333;
+}
+
+li {
+    float: left;
 }
 
 li a {
     display: block;
-    color: #000;
-    padding: 8px 0 8px 16px;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
     text-decoration: none;
 }
 
-/* Change the link color on hover */
+/* Change the link color to #111 (black) on hover */
 li a:hover {
-    background-color: #555;
-    color: white;
-}
-
-.active {
-    background-color: #4CAF50;
-    color: white;
+    background-color: #111;
 }
